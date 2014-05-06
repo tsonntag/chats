@@ -16,4 +16,6 @@ To start a web server for the application, run:
 
 ## License
 
+Chats is released under the MIT license.
+
 Copyright © 2014 Thomas Sonntag
