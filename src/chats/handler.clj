@@ -1,13 +1,15 @@
 (ns chats.handler
-  (:require [compojure.core :refer [defroutes routes]]
-            [ring.middleware.resource :refer [wrap-resource]]
-            [ring.middleware.file-info :refer [wrap-file-info]]
-            [hiccup.middleware :refer [wrap-base-url]]
-            [compojure.handler :as handler]
-            [compojure.route :as route]
-            [chats.routes.home :refer [home-routes]]
-            [taoensso.timbre :as timbre]
-            [com.postspectacular.rotor :as rotor]))
+  (:require
+    [ring.adapter.jetty :as jetty]
+    [compojure.core :refer [defroutes routes]]
+    [ring.middleware.resource :refer [wrap-resource]]
+    [ring.middleware.file-info :refer [wrap-file-info]]
+    [hiccup.middleware :refer [wrap-base-url]]
+    [compojure.handler :as handler]
+    [compojure.route :as route]
+    [chats.routes.home :refer [home-routes]]
+    [taoensso.timbre :as timbre]
+    [com.postspectacular.rotor :as rotor]))
 
 (defn info-appender [{:keys [level message]}]
     (println "level:" level "message:" message))
@@ -39,4 +41,5 @@
       (handler/site)
       (wrap-base-url)))
 
-
+(defn -main [port]
+  (jetty/run-jetty app {:port (Integer. port) :join? false}))

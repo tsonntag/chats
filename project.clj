@@ -5,6 +5,7 @@
                  [compojure "1.1.6"]
                  [hiccup "1.0.5"]
                  [ring-server "0.3.1"]
+                 [ring/ring-jetty-adapter "1.3.0-beta1"]
                  [postgresql/postgresql "9.1-901.jdbc4"]
                  [korma "0.3.0-RC6"]
                  [lobos "1.0.0-beta1"]
@@ -23,6 +24,7 @@
          :init chats.handler/init
          :destroy chats.handler/destroy}
   :aot :all
+  :uberjar-name "chats-standalone.jar"
   :profiles
   {:production
    {:ring
