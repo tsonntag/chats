@@ -1,13 +1,13 @@
 (ns chats.models.db
    (:require
-     [clojure.java.jdbc :as sql]
      [korma.db :refer [defdb postgres transaction]]
      [korma.core :refer :all]))
 
 (def db (postgres
     {:db   "chats"
      :user "postgres"
-     :password "Lag1Lag"}))
+     }))
+;     :password "Lag1Lag"}))
 
 (defdb korma-db db)
 

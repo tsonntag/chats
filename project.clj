@@ -7,6 +7,7 @@
                  [ring-server "0.3.1"]
                  [postgresql/postgresql "9.1-901.jdbc4"]
                  [korma "0.3.0-RC6"]
+                 [lobos "1.0.0-beta1"]
                  [log4j "1.2.15"
                      :exclusions [javax.mail/mail
                                   javax.jms/jms
