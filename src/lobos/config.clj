@@ -2,4 +2,4 @@
   (:use lobos.connectivity)
   (:require [chats.models.db :as db]))
 
-(open-global db/db)
+#_(open-global db/db)
