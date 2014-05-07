@@ -2,7 +2,7 @@
   (:require
     [compojure.core :refer :all]
     [chats.views.layout :as layout]
-    [chats.models.chat :as chat] 
+    [chats.models.schema :as schema]
     ))
 
 (defn home []
@@ -10,7 +10,9 @@
 
 (defn chats []
   (layout/common [:h1 "Chats"]
-                 (map #(vector [:h2 (:name %)]) (chat/all))
+                 [:ul 
+                  (for [chat (schema/chats)]
+                    [:li (:name chat)])]
                  ))
 
 (defroutes home-routes

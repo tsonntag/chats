@@ -18,3 +18,14 @@
 
 (defentity chat-items
   (belongs-to chats))
+
+
+(defn add-chat [name]
+    (insert :chats (values [{:name name}])))
+
+(defn chats []
+    (select :chats))
+
+(defn delete-chat [name]
+    (delete :chats (where {:name name})))
+

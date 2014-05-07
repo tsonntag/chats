@@ -43,5 +43,6 @@
       (wrap-base-url)))
 
 (defn -main [port]
+  (println "main...")
   (lobos.core/migrate)
   (jetty/run-jetty app {:port (Integer. port) :join? false}))

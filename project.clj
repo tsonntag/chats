@@ -8,7 +8,6 @@
                  [ring/ring-jetty-adapter "1.3.0-beta1"]
                  [postgresql/postgresql "9.1-901.jdbc4"]
                  [korma "0.3.1"]
-                 ;[org.clojure/java.jdbc "0.1.1"]
                  [lobos "1.0.0-beta1"]
                  [log4j "1.2.15"
                      :exclusions [javax.mail/mail
@@ -24,16 +23,18 @@
   :ring {:handler chats.handler/app
          :init chats.handler/init
          :destroy chats.handler/destroy}
+  :main ^:skip-aot chats.handler
   ;:aot :all
   :uberjar-name "chats-standalone.jar"
   :min-lein-version "2.0.0"
   :profiles
-  {:production
+  {:uberjar
+   {:aot :all}
+   :production
    {:ring
     {:open-browser? false, :stacktraces? false, :auto-reload? false}}
-   :dev
+  :dev
    {:dependencies [[ring-mock "0.1.5"]
                    [ring/ring-devel "1.2.1"]
                    ;[org.clojure/java.classpath "0.2.2"]
-                   ;[org.clojure/java.jdbc "0.1.1"]
                    ]}})
