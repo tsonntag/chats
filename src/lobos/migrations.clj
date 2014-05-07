@@ -1,7 +1,9 @@
 (ns lobos.migrations
   (:refer-clojure :exclude [alter drop bigint boolean char double float time])
-  (:use (lobos [migration :only [defmigration]] core schema config helpers)))
+  (:use (lobos [migration :only [defmigration]] core schema
+               config helpers)))
 
+(println "lobos.migrations..")
 (defmigration create-chats
   (up []
       (create
@@ -23,7 +25,7 @@
                (timestamp :responded-at)
                (timestamps)))
       (create
-        (index :chat-items [:chat-id])) )
+        (index :chat-items [:chat-id])))
   (down []
         (drop (table :chats))
         (drop (table :chat-items))))

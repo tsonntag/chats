@@ -1,5 +1,6 @@
 (ns chats.handler
   (:require
+    [lobos.core :only [migrate]]
     [ring.adapter.jetty :as jetty]
     [compojure.core :refer [defroutes routes]]
     [ring.middleware.resource :refer [wrap-resource]]
@@ -42,4 +43,5 @@
       (wrap-base-url)))
 
 (defn -main [port]
+  (lobos.core/migrate)
   (jetty/run-jetty app {:port (Integer. port) :join? false}))

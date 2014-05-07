@@ -1,5 +1,6 @@
 (ns lobos.config
   (:use lobos.connectivity)
-  (:require [chats.models.db :as db]))
+  (:require [chats.models.schema :as schema]))
 
-#_(open-global db/db)
+(println "open-global ...")
+(open-global schema/db-spec)
