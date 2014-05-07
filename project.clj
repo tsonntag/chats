@@ -25,6 +25,7 @@
          :destroy chats.handler/destroy}
   :aot :all
   :uberjar-name "chats-standalone.jar"
+  :min-lein-version "2.0.0"
   :profiles
   {:production
    {:ring
