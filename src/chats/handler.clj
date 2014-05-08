@@ -8,7 +8,9 @@
     [compojure.route :as route]
     [chats.routes.home :refer [home-routes]]
     [taoensso.timbre :as timbre]
-    [com.postspectacular.rotor :as rotor]))
+    [com.postspectacular.rotor :as rotor])
+  (:gen-class))
+
 
 (defn info-appender [{:keys [level message]}]
     (println "level:" level "message:" message))

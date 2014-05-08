@@ -4,10 +4,11 @@
     [korma.core :refer :all]))
 
 (def db-spec
+  (or (System/getenv "DATABASE_URL")
   {:classname "org.postgresql.Driver"
    :subprotocol "postgresql"
    :user "postgres"
-   :subname "//localhost:5432/chats"})
+   :subname "//localhost:5432/chats"}))
 
 (defdb korma-db db-spec)
 
@@ -21,12 +22,11 @@
 
 
 (defn add-chat [name]
-    (insert :chats (values [{:name name}])))
+  (insert :chats (values [{:name name}])))
 
 (defn chats []
-  [])
-   (select :chats))
+  (select :chats))
 
 (defn delete-chat [name]
-    (delete :chats (where {:name name})))
+  (delete :chats (where {:name name})))
 

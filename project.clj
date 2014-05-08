@@ -2,14 +2,14 @@
   :description "Simple quasi synchron chat server"
   :url "http://example.com/FIXME"
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [compojure "1.1.6"]
-                 [hiccup "1.0.5"]
+                 [compojure "1.1.7"]
+                 [hiccup "1.0.5"  :exclusions [org.clojure/clojure]]
                  [hiccup-bootstrap "0.1.2"]
                  [ring-server "0.3.1"]
                  [ring/ring-jetty-adapter "1.3.0-beta1"]
                  ; don't change versions for lobos and korma. otherwise conflicting jdbc libs
                  [lobos "1.0.0-SNAPSHOT"] 
-                 [korma "0.3.0-beta7"]
+                 [korma "0.3.0-beta7" :exclusions [org.clojure/clojure]]
                  [postgresql/postgresql "9.1-901.jdbc4"]
                  [log4j "1.2.15"
                      :exclusions [javax.mail/mail
@@ -25,8 +25,7 @@
   :ring {:handler chats.handler/app
          :init    chats.handler/init
          :destroy chats.handler/destroy}
-  :main ^:skip-aot chats.handler
-  ;:aot :all
+  :main chats.handler
   :uberjar-name "chats-standalone.jar"
   :min-lein-version "2.0.0"
   :profiles
