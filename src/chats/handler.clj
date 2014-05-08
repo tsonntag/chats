@@ -1,11 +1,9 @@
 (ns chats.handler
   (:require
-    [lobos.core :only [migrate]]
     [ring.adapter.jetty :as jetty]
+    [lobos.core :only [migrate]]
     [compojure.core :refer [defroutes routes]]
-    [ring.middleware.resource :refer [wrap-resource]]
-    [ring.middleware.file-info :refer [wrap-file-info]]
-    [hiccup.middleware :refer [wrap-base-url]]
+    [hiccup.bootstrap.middleware :refer [wrap-bootstrap-resources]]
     [compojure.handler :as handler]
     [compojure.route :as route]
     [chats.routes.home :refer [home-routes]]
@@ -40,7 +38,7 @@
 (def app
   (-> (routes home-routes app-routes)
       (handler/site)
-      (wrap-base-url)))
+      (wrap-bootstrap-resources)))
 
 (defn -main [port]
   (println "main...")

@@ -24,7 +24,8 @@
     (insert :chats (values [{:name name}])))
 
 (defn chats []
-    (select :chats))
+  [])
+   (select :chats))
 
 (defn delete-chat [name]
     (delete :chats (where {:name name})))
