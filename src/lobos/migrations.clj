@@ -3,7 +3,6 @@
   (:use (lobos [migration :only [defmigration]] core schema
                config helpers)))
 
-(println "lobos.migrations..")
 (defmigration create-chats
   (up []
       (create

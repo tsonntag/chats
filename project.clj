@@ -18,6 +18,7 @@
                                   com.sun.jmx/jmxri]]
                  [com.taoensso/timbre "3.1.6"]
                  [com.postspectacular/rotor "0.1.0"]
+                 [com.cemerick/url "0.1.1"]
                  [lib-noir "0.8.2"]
                  [ring-middleware-format "0.3.2"]]
 

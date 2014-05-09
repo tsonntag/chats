@@ -1,14 +1,19 @@
 (ns chats.models.schema
   (:require
-    [korma.db :refer [defdb]]
+    [clojure.string :as str :only [replace-first]]
+    [cemerick.url :refer [url]]
+    [korma.db :refer [defdb default-connection]]
     [korma.core :refer :all]))
 
+(def db-url (or (System/getenv "DATABASE_URL") "postgres://postgres:@localhost:5432/chats"))
+
 (def db-spec
-  (or (System/getenv "DATABASE_URL")
-  {:classname "org.postgresql.Driver"
-   :subprotocol "postgresql"
-   :user "postgres"
-   :subname "//localhost:5432/chats"}))
+  (let [url (url (str/replace-first db-url #"[^:]*:" "http:"))]
+   {:classname "org.postgresql.Driver"
+    :subprotocol "postgresql"
+    :user (:username url)
+    :password (:password url)
+    :subname (str "//" (:host url) ":" (:port url) (:path url))}))
 
 (defdb korma-db db-spec)
 
