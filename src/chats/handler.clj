@@ -30,7 +30,14 @@
           [:shared-appender-config :rotor]
           {:path "chats.log" :max-size (* 512 1024) :backlog 10})
 
-    (timbre/info "chats started successfully"))
+    (timbre/info "chats started successfully")
+
+    (println "open-global ...")
+    (open-global schema/db-spec)
+    (println "pending migrations:")
+    (lobos.core/print-pending)
+    (println "migrate ...")
+    (lobos.core/migrate))
 
 (defn destroy []
     (timbre/info "chats is shutting down"))
@@ -45,11 +52,4 @@
       (wrap-bootstrap-resources)))
 
 (defn -main [port]
-  (println "main...")
-  (println "open-global ...")
-  (open-global schema/db-spec)
-  (println "pending migrations:")
-  (lobos.core/print-pending)
-  (println "migrate ...")
-  (lobos.core/migrate)
   (jetty/run-jetty app {:port (Integer. port) :join? false}))
