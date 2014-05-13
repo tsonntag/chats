@@ -35,20 +35,10 @@
     (timbre/info "chats started successfully"))
 
 (defn migrate []
-    (require 'lobos.migrations :reload)
-    (println "migration-names " (lobos.migration/list-migrations-names))
-    (println "global-connections " @lobos.connectivity/global-connections)
+    (println "migrate")
     (println "open-global ...")
-    (open-global schema/db-spec)
-    (println "global-connections " @lobos.connectivity/global-connections)
-    (println "pending migrations:" (with-out-str (lobos.core/print-pending)))
-    (println "done migrations:"    (with-out-str (lobos.core/print-done)))
-
-    (println "rollback ...")
-    (lobos.core/rollback)
-    (println "pending migrations:" (with-out-str (lobos.core/print-pending)))
-    (println "done migrations:"    (with-out-str (lobos.core/print-done)))
-
+    (try (open-global schema/db-spec)
+      (catch Exception e (str "caught exception: " (.getMessage e))))
     (println "migrate ...")
     (lobos.core/migrate)
     (println "pending migrations:" (with-out-str (lobos.core/print-pending)))
@@ -68,6 +58,5 @@
       (wrap-bootstrap-resources)))
 
 (defn -main [port]
-  (println "main...")
   (migrate)
   (jetty/run-jetty app {:port (Integer. port) :join? false}))

@@ -26,12 +26,12 @@
   :ring {:handler chats.handler/app
          :init    chats.handler/init
          :destroy chats.handler/destroy}
-  :main chats.handler
+  :main ^:skip-aot chats.handler
   :uberjar-name "chats-standalone.jar"
   :min-lein-version "2.0.0"
   :profiles
-  {:uberjar
-   {:aot :all}
+  {;:uberjar
+   ;{:aot :all}
    :production
    {:ring
     {:open-browser? false, :stacktraces? false, :auto-reload? false}}

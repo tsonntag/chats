@@ -1,7 +1,8 @@
 (ns lobos.migrations
   (:refer-clojure :exclude [alter drop bigint boolean char double float time])
-  (:use (lobos [migration :only [defmigration]] core schema
-               config helpers)))
+  (:use (lobos [migration :only [defmigration migrations]] core schema config helpers)))
+
+(println "lobos.migrations: before:" @migrations)
 
 (defmigration create-chats
   (up []
@@ -28,3 +29,5 @@
   (down []
         (drop (table :chats))
         (drop (table :chat-items))))
+
+(println "lobos.migrations: after:" @migrations)
