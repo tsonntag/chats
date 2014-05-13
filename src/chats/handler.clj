@@ -35,6 +35,7 @@
     (timbre/info "chats started successfully"))
 
 (defn migrate []
+    (require 'lobos.migrations :reload)
     (println "migration-names " (lobos.migration/list-migrations-names))
     (println "global-connections " @lobos.connectivity/global-connections)
     (println "open-global ...")
