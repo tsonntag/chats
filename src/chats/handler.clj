@@ -33,6 +33,7 @@
     (timbre/info "chats started successfully"))
 
 (defn migrate []
+    (require 'lobos.migrations)
     (println "global-connections " @lobos.connectivity/global-connections)
     (println "open-global ...")
     (open-global schema/db-spec)
