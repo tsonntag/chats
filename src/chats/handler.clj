@@ -1,6 +1,8 @@
 (ns chats.handler
   (:require
     [chats.models.schema :as schema]
+    [lobos.migrations]
+    [lobos.migration :refer [list-migration-names]]
     [lobos.connectivity :refer [open-global global-connections]]
     [lobos.core :only [migrate rollback print-pending print-done]]
     [ring.adapter.jetty :as jetty]
@@ -33,7 +35,7 @@
     (timbre/info "chats started successfully"))
 
 (defn migrate []
-    (require 'lobos.migrations)
+    (println "migration-names " (lobos.migration/list-migration-names))
     (println "global-connections " @lobos.connectivity/global-connections)
     (println "open-global ...")
     (open-global schema/db-spec)
