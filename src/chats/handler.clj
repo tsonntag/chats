@@ -1,8 +1,8 @@
 (ns chats.handler
   (:require
     [chats.models.schema :as schema]
-    [lobos.connectivity :refer [open-global]]
-    [lobos.core :only [migrate]]
+    [lobos.connectivity :refer [open-global global-connections]]
+    [lobos.core :only [migrate print-pending print-done]]
     [ring.adapter.jetty :as jetty]
     [compojure.core :refer [defroutes routes]]
     [hiccup.bootstrap.middleware :refer [wrap-bootstrap-resources]]
@@ -30,12 +30,19 @@
           [:shared-appender-config :rotor]
           {:path "chats.log" :max-size (* 512 1024) :backlog 10})
 
-    (timbre/info "chats started successfully")
+    (timbre/info "chats started successfully"))
 
+(defn migrate []
+    (println "global-connections ...")
+    (println @lobos.connectivity/global-connections)
     (println "open-global ...")
     (open-global schema/db-spec)
+    (println "global-connections ...")
+    (println @lobos.connectivity/global-connections)
     (println "pending migrations:")
     (lobos.core/print-pending)
+    (println "done migrations:")
+    (lobos.core/print-done)
     (println "migrate ...")
     (lobos.core/migrate))
 
@@ -52,4 +59,6 @@
       (wrap-bootstrap-resources)))
 
 (defn -main [port]
+  (println "main...")
+  (migrate)
   (jetty/run-jetty app {:port (Integer. port) :join? false}))
