@@ -2,7 +2,7 @@
   (:require
     [chats.models.schema :as schema]
     [lobos.connectivity :refer [open-global global-connections]]
-    [lobos.core :only [migrate print-pending print-done]]
+    [lobos.core :only [migrate rollback print-pending print-done]]
     [ring.adapter.jetty :as jetty]
     [compojure.core :refer [defroutes routes]]
     [hiccup.bootstrap.middleware :refer [wrap-bootstrap-resources]]
@@ -33,18 +33,23 @@
     (timbre/info "chats started successfully"))
 
 (defn migrate []
-    (println "global-connections ...")
-    (println @lobos.connectivity/global-connections)
+    (println "global-connections " @lobos.connectivity/global-connections)
     (println "open-global ...")
     (open-global schema/db-spec)
-    (println "global-connections ...")
-    (println @lobos.connectivity/global-connections)
-    (println "pending migrations:")
-    (lobos.core/print-pending)
-    (println "done migrations:")
-    (lobos.core/print-done)
+    (println "global-connections " @lobos.connectivity/global-connections)
+    (println "pending migrations:" (with-out-str (lobos.core/print-pending)))
+    (println "done migrations:"    (with-out-str (lobos.core/print-done)))
+
+    (println "rollback ...")
+    (lobos.core/rollback)
+    (println "pending migrations:" (with-out-str (lobos.core/print-pending)))
+    (println "done migrations:"    (with-out-str (lobos.core/print-done)))
+
     (println "migrate ...")
-    (lobos.core/migrate))
+    (lobos.core/migrate)
+    (println "pending migrations:" (with-out-str (lobos.core/print-pending)))
+    (println "done migrations:"    (with-out-str (lobos.core/print-done)))
+  )
 
 (defn destroy []
     (timbre/info "chats is shutting down"))

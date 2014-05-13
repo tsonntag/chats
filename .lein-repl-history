@@ -1,17 +1,3 @@
-(require 'chats.repl :reload)
-(chats.repl/start-server)
-(chats.repl/stop-server)
-(require 'chats.models.db :reload)
-(require 'lobos.config :reload)
-(require 'lobos.migrations)
-(lobos.core/migrate
-)
-(pst *e)
-(lobos.migrations/create-chats)
-(pst *e)
-(lobos.migration/*migrations-table*)
-lobos.migration/*migrations-table*
-(lobos.migration/list-migrations)
 (lobos.migration/migrations)
 lobos.migration/migrations
 @lobos.migration/migrations
@@ -498,3 +484,17 @@ chats.models.schema/db-spec
  (lobos.connectivity/global-connections
 )
  @lobos.connectivity/global-connections
+ (lobos.core/print-pending)
+(quit)
+(lobos.core/migrate)
+(chats.handler/mi)
+(chats.handler/migr)
+(require 'chats.handler)
+(migrate)
+(lobos.core/rollback)
+(migrate)
+(lobos.connectivity/close-global)
+(migrate)
+(lobos.core/print-pending)
+(with-out-str (lobos.core/print-pending))
+(with-out-str (lobos.core/print-done))
