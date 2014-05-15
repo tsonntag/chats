@@ -7,7 +7,6 @@
     [lobos.core :only [migrate rollback print-pending print-done]]
     [ring.adapter.jetty :as jetty]
     [compojure.core :refer [defroutes routes]]
-    [hiccup.bootstrap.middleware :refer [wrap-bootstrap-resources]]
     [compojure.handler :as handler]
     [compojure.route :as route]
     [chats.routes.home :refer [home-routes]]
@@ -54,8 +53,7 @@
 
 (def app
   (-> (routes home-routes app-routes)
-      (handler/site)
-      (wrap-bootstrap-resources)))
+      (handler/site)))
 
 (defn -main [port]
   (migrate)

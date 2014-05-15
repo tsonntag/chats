@@ -2,32 +2,28 @@
   (:refer-clojure :exclude [alter drop bigint boolean char double float time])
   (:use (lobos [migration :only [defmigration migrations]] core schema config helpers)))
 
-(println "lobos.migrations: before:" @migrations)
-
 (defmigration create-chats
   (up []
       (create
-        (table :chats
+        (table :chat
                (surrogate-key)
                (varchar :name 128)
-               (integer :active-item-id)
+               (integer :active-item_id)
                (timestamp :finished-at)
                (timestamps)))
       (create
-        (index :chats [:name])) 
+        (index :chat [:name])) 
 
       (create
-        (table :chat-items
+        (table :chat-item
                (surrogate-key)
-               (integer :chat-id)
+               (integer :chat_id)
                (text    :request)
                (text    :response)
                (timestamp :responded-at)
                (timestamps)))
       (create
-        (index :chat-items [:chat-id])))
+        (index :chat-item [:chat_id])))
   (down []
-        (drop (table :chats))
-        (drop (table :chat-items))))
-
-(println "lobos.migrations: after:" @migrations)
+        (drop (table :chat))
+        (drop (table :chat-item))))

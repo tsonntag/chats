@@ -4,7 +4,6 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [compojure "1.1.7"]
                  [hiccup "1.0.5"  :exclusions [org.clojure/clojure]]
-                 [hiccup-bootstrap "0.1.2"]
                  [ring-server "0.3.1"]
                  [ring/ring-jetty-adapter "1.3.0-beta1"]
                  ; don't change versions for lobos and korma. otherwise conflicting jdbc libs
