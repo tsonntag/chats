@@ -2,17 +2,23 @@
   (:require
     [compojure.core :refer :all]
     [chats.views.layout :as layout]
-    [chats.models.chat :as chat]
     [chats.views.chat :as view]
     ))
 
-(defn home []
-  (layout/common [:h1 "Hello World!"]))
-
-(defn chats []
-  (layout/common [:h1 "Chats"]
-                 (view/all (chat/all))))
-
 (defroutes home-routes
-  (GET "/"      [] (home))
-  (GET "/chats" [] (chats)))
+  (GET "/" []
+       (layout/common
+         [:h1 "Welcome to chats!"]))
+
+  (GET "/chats" []
+       (layout/common
+         (view/all)))
+
+  (GET "/chats/new" [] 
+       (layout/common
+         (view/new)))
+
+  (GET "/chats/:id" [id]
+       (layout/common
+         (view/show (Integer/parseInt id))))
+  )

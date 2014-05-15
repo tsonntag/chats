@@ -19,8 +19,8 @@
 (defn add-item! [item]
   (insert chat-item (values [item])))
 
-(defn find [name]
-  (select chat (where {:name name})))
+(defn find [id]
+  (first (select chat (where {:id id}))))
 
 (def chats* 
   (-> (select* chat)

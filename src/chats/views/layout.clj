@@ -17,6 +17,7 @@
       [:li (link-to "/about" "About")]]]]])
 
 (defn common [& body]
+  (println body)
   (html5
     [:head
      [:title "Chats"]
