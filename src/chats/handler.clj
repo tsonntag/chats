@@ -10,6 +10,8 @@
     [compojure.handler :as handler]
     [compojure.route :as route]
     [chats.routes.home :refer [home-routes]]
+    [chats.routes.gui :refer [gui-routes]]
+    [chats.routes.api :refer [api-routes]]
     [taoensso.timbre :as timbre]
     [com.postspectacular.rotor :as rotor])
   (:gen-class))
@@ -52,7 +54,7 @@
   (route/not-found "Not Found"))
 
 (def app
-  (-> (routes home-routes app-routes)
+  (-> (routes home-routes gui-routes api-routes app-routes)
       (handler/site)))
 
 (defn -main [port]

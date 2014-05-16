@@ -17,7 +17,6 @@
       [:li (link-to "/about" "About")]]]]])
 
 (defn common [& body]
-  (println body)
   (html5
     [:head
      [:title "Chats"]
@@ -29,4 +28,5 @@
       [:div.row
        [:div.col-md-12 body]]]
      (include-js "https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js")
+     (include-js "/js/rails.js")
      (include-js "/js/bootstrap.min.js")]]))

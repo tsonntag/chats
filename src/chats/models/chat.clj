@@ -11,7 +11,7 @@
 (defentity chat-item
     (belongs-to chat))
 
-(defn now [] (java.util.Date.))
+(defn now [] (java.sql.Timestamp (System/currentTimeMillis)))
 
 (defn add! [name]
   (insert chat (values [{:name name}])))
@@ -36,23 +36,28 @@
       (where {:finished-at nil})
       (select)))
 
-(defn delete! [name]
-  (delete chat (where {:name name})))
+(defn delete! [id]
+  (delete chat (where {:id id})))
 
 (defn active? [chat]
-  (not (:finished chat)))
+  (not (:finished-at chat)))
 
-(defn active! [chat]
+(defn active! [id]
   (update chat 
-          (where chat)
-          (set-fields {:finished-at (now)})))
-
-(defn pause! [chat]
-  (update chat 
-          (where chat)
+          (where {:id id})
           (set-fields {:finished-at nil})))
 
-(defn toggle-active! [chat]
-  (if (active? chat)
-    (pause! chat)
-    (active! chat)))
+(defn pause! [id]
+  (update chat 
+          (where {:id id})
+          (set-fields {:finished-at (now)})))
+
+(defn toggle-active! [id]
+  (when-let [chat (find id)]
+    (println "CCCCCCCCCCC" chat)
+    (if (active? chat)
+      (pause! id)
+      (active! id))))
+
+(defn clear! [id]
+  (delete chat-item (where {:chat_id id})))
