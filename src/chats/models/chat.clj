@@ -11,7 +11,7 @@
 (defentity chat-item
     (belongs-to chat))
 
-(defn now [] (java.sql.Timestamp (System/currentTimeMillis)))
+(defn now [] (java.sql.Timestamp. (System/currentTimeMillis)))
 
 (defn add! [name]
   (insert chat (values [{:name name}])))
