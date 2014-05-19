@@ -1,7 +1,5 @@
 (ns chats.routes.gui
   (:require
-    [clojure.string :refer [capitalize]]
-    [compojure.core :refer :all]
     [chats.views.layout :as layout]
     [chats.models.chat :as chat]
     [chats.views.utils :refer :all]
@@ -24,7 +22,7 @@
 (defn redirect-to [id]
   (redirect (str "/chats/" id)))
 
-(defn -all
+(defn all
   ([chats]
     (layout/common
       [:h1 "Chats"]
@@ -33,12 +31,12 @@
              ["Name" link]
              :created-at
              ["Active" chat/active?]
-             ["Items" (comp count :chat-item)])))
+             ["Items"  chat/item-count])))
   ([]
-   (-all (chat/all))))
+   (all (chat/all))))
 
-(defn -show [id]
-  (if-let [chat (chat/find id)]
+(defn show [id]
+  (if-let [chat (chat/find :id id)]
     (layout/common
       [:h1 "Chat"]
       (links "chats" link-list (link-delete id) (link-clear id) (link-toggle chat))
@@ -53,9 +51,10 @@
              :request
              :response
              ["Response forwarded" :responded-at]))
-    [:h1 "Not found"]))
+    {:status 404
+     :body (format "chat=%s\nmsg=Not found\n" id)}))
 
-(defn -new []
+(defn new []
    (layout/common
      [:h1 "Create Chat"]
      [:br]
@@ -64,29 +63,18 @@
               [:br]
               (submit-button "Create"))))
 
-(defn -create [name]
+(defn create [name]
   (chat/add! name)
   (redirect "/chats"))
 
-(defn -delete [id]
+(defn delete [id]
   (chat/delete! id)
   (redirect "/chats"))
 
-(defn -toggle [id]
+(defn toggle [id]
   (chat/toggle-active! id)
   (redirect-to id))
 
-(defn -clear [id]
+(defn clear [id]
   (chat/clear! id)
   (redirect-to id))
-
-
-(defroutes gui-routes
-  (GET "/chats"            []     (-all))
-  (GET "/chats/new"        []     (-new))
-  (POST "/chats"           [name] (-create name))
-  (GET "/chats/:id"        [id]   (-show   (Integer/parseInt id)))
-  (PUT "/chats/:id/toggle" [id]   (-toggle (Integer/parseInt id)))
-  (PUT "/chats/:id/clear"  [id]   (-clear  (Integer/parseInt id)))
-  (DELETE "/chats/:id"     [id]   (-delete (Integer/parseInt id)))
-  )

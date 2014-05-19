@@ -19,8 +19,8 @@
 (defn add-item! [item]
   (insert chat-item (values [item])))
 
-(defn find [id]
-  (first (select chat (where {:id id}))))
+(defn find [& arg]
+  (first (select chat (where (apply assoc {} arg)))))
 
 (def chats* 
   (-> (select* chat)
@@ -61,3 +61,11 @@
 
 (defn clear! [id]
   (delete chat-item (where {:chat_id id})))
+
+
+(defn item-count [chat]
+  (-> (select chat-item
+          (where {:chat_id (:id chat)})
+          (aggregate (count :*) :count))
+      first
+      :count))
