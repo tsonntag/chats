@@ -1,0 +1,26 @@
+#!/usr/bin/bash
+
+set -x
+chat=$1
+cmd=$2
+
+if [[ "$cmd" = "rsp" ]]; then
+  data="item=$3&$cmd=$4"
+else
+  data="$cmd=$3"
+fi
+
+#host="kaffeeklatsch.heroku.com"
+host="localhost:8080"
+if [[ "$cmd" ]]; then
+  path="$chat/$cmd"
+else
+  path="$chat"
+fi
+url="http://$host/chats/$path"
+
+if [[ "$3" ]]; then
+  curl -d "$data" "$url"
+else
+  curl "$url"
+fi
