@@ -22,6 +22,21 @@
 (defn find [& arg]
   (first (select chat (where (apply assoc {} arg)))))
 
+(defn find-item [& arg]
+  (first (select chat-item (where (apply assoc {} arg)))))
+
+(defn find-active []
+  (first (select chat (where {:finished-at nil}))))
+
+(defn not-responded-items [chat]
+  (filter (comp not :response) (:chat-item chat))) 
+
+(defn responded-items [chat]
+  (filter :response (:chat-item chat))) 
+
+(defn response-not-forwarded-items [chat]
+  (filter (comp not :responded-at) (:chat-item chat))) 
+
 (def chats* 
   (-> (select* chat)
       (with chat-item)
@@ -29,11 +44,6 @@
 
 (defn all []
   (-> chats*
-      (select)))
-
-(defn active []
-  (-> chats*
-      (where {:finished-at nil})
       (select)))
 
 (defn delete! [id]

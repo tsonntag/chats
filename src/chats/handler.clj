@@ -10,8 +10,7 @@
     [compojure.core :refer :all]
     [compojure.handler :as handler]
     [compojure.route :as route]
-    [chats.routes.gui :as gui]
-    [chats.routes.api :as api]
+    [chats.routes.chat :refer chat-routes]
     [taoensso.timbre :as timbre]
     [com.postspectacular.rotor :as rotor])
   (:gen-class))
@@ -49,34 +48,15 @@
 (defn destroy []
     (timbre/info "chats is shutting down"))
 
+(defroutes home-routes
+  (GET "/" [] (layout/common [:h1 "Welcome to chats!"])))
+
 (defroutes app-routes
-  (GET "/" [] (layout/common [:h1 "Welcome to chats!"]))
-
-  (GET    "/chats"            []     (gui/all))
-  (POST   "/chats"            [name] (gui/create name))
-  (GET    "/chats/new"        []     (gui/new))
-
-  (GET    "/chats/list"       []     (api/list))
-  (GET    "/chats/rsp"        []     (api/get-rsp))
-  (POST   "/chats/rsp"        []     (api/post-rsp))
-  (GET    "/chats/req"        []     (api/get-req))
-  (POST   "/chats/req"        []     (api/post-req))
-
-  (GET    "/chats/:id"        [id]   (gui/show   (Integer/parseInt id)))
-  (PUT    "/chats/:id/toggle" [id]   (gui/toggle (Integer/parseInt id)))
-  (PUT    "/chats/:id/clear"  [id]   (gui/clear  (Integer/parseInt id)))
-  (DELETE "/chats/:id"        [id]   (gui/delete (Integer/parseInt id)))
-
-  (GET    "/chats/:id/query"  [id]   (api/query  (Integer/parseInt id)))
-  (POST   "/chats/:id/delete" [id]   (api/delete (Integer/parseInt id)))
-  (POST   "/chats/:id/create" [id]   (api/create (Integer/parseInt id)))
-  (POST   "/chats/:id/init"   [id]   (api/init)  (Integer/parseInt id))
-
   (route/resources "/")
   (route/not-found "Not Found"))
 
 (def app
-  (-> (routes app-routes)
+  (-> (routes app-routes chat-routes app-routes)
       (handler/site)))
 
 (defn -main [port]
