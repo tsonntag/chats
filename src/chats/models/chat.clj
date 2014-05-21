@@ -1,5 +1,4 @@
 (ns chats.models.chat
-  (:refer-clojure :exclude [all])
   (:require
     [korma.core :refer :all]))
 
