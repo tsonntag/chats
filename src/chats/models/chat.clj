@@ -1,5 +1,5 @@
 (ns chats.models.chat
-  (:refer-clojure :exclude [find all])
+  (:refer-clojure :exclude [all])
   (:require
     [korma.core :refer :all]))
 
@@ -13,44 +13,52 @@
 
 (defn now [] (java.sql.Timestamp. (System/currentTimeMillis)))
 
-(defn create! [name]
+(defn chat-create! [name]
   (insert chat (values [{:name name}])))
 
 (defn add-item! [item]
   (insert chat-item (values [item])))
 
-(defmacro find [& arg]
+(defmacro find-chat [& arg]
   `(first (select chat 
                   (with chat-item)
                   (where (assoc {} ~@arg)))))
 
 (defmacro find-item [& arg]
-  ` (first (select chat-item
-                   (where (assoc {} ~@arg)))))
+  `(first (select chat-item
+                  (where (assoc {} ~@arg)))))
 
-(defn not-responded-items [chat]
-  (filter (comp not :response) (:chat-item chat))) 
+(defmacro items [chat-id & forms]
+  `(select chat-item
+           (where {:chat_id ~chat-id})
+           ~@forms))
 
-(defn response-not-forwarded-items [chat]
-  (filter (comp not :responded-at) (:chat-item chat))) 
+(defn not-responded [query]
+  (where query {:response nil}))
 
-(defn all []
+(defn responded [query]
+  (where query {:response [not= nil]}))
+
+(defn response-not-forwarded [query]
+  (where query {:responded-at nil}))
+
+(defn chats []
   (select chat
           (with chat-item)
           (order :name :ASC)))
 
-(defn delete! [id]
+(defn chat-delete! [id]
   (delete chat (where {:id id})))
 
-(defn active? [chat]
+(defn chat-active? [chat]
   (not (:finished-at chat)))
 
-(defn active! [id]
+(defn chat-active! [id]
   (update chat 
           (where {:id id})
           (set-fields {:finished-at nil})))
 
-(defn pause! [id]
+(defn chat-pause! [id]
   (update chat 
           (where {:id id})
           (set-fields {:finished-at (now)})))
@@ -70,14 +78,13 @@
           (where {:id (:id item)})
           (set-fields {:response (str (:response item) "<OBSOLETE>") :responded-at (now)})))
 
-(defn toggle-active! [id]
-  (when-let [chat (find id)]
-    (println "CCCCCCCCCCC" chat)
-    (if (active? chat)
-      (pause! id)
-      (active! id))))
+(defn chat-toggle-active! [id]
+  (when-let [chat (find-chat id)]
+    (if (chat-active? chat)
+      (chat-pause! id)
+      (chat-active! id))))
 
-(defn clear! [id]
+(defn chat-clear! [id]
   (delete chat-item (where {:chat_id id})))
 
 

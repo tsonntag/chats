@@ -3,14 +3,14 @@
     [chats.models.schema :as schema]
     [chats.views.layout :as layout]
     [lobos.migrations]
-    [lobos.migration :refer [list-migrations-names]]
-    [lobos.connectivity :refer [open-global global-connections]]
+    [lobos.connectivity :refer [open-global]]
     [lobos.core :only [migrate rollback print-pending print-done]]
     [ring.adapter.jetty :as jetty]
     [compojure.core :refer :all]
     [compojure.handler :as handler]
     [compojure.route :as route]
-    [chats.routes.chat :refer [chat-routes]]
+    [chats.routes.gui :refer [gui-routes]]
+    [chats.routes.api :refer [api-routes]]
     [taoensso.timbre :as timbre]
     [com.postspectacular.rotor :as rotor])
   (:gen-class))
@@ -55,7 +55,11 @@
   (route/not-found "Not Found"))
 
 (def app
-  (-> (routes home-routes chat-routes app-routes)
+  (-> (routes 
+        home-routes
+        api-routes
+        gui-routes
+        app-routes)
       (handler/site)))
 
 (defn -main [port]
