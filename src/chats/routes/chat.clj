@@ -69,7 +69,7 @@
               (submit-button "Create"))))
 
 (defn create [name]
-  (chat/add! name)
+  (chat/create! name)
   (redirect "/chats"))
 
 (defn delete [id]
