@@ -13,38 +13,31 @@
 
 (defn now [] (java.sql.Timestamp. (System/currentTimeMillis)))
 
-(defn add! [name]
+(defn create! [name]
   (insert chat (values [{:name name}])))
 
 (defn add-item! [item]
   (insert chat-item (values [item])))
 
-(defn find [& arg]
-  (first (select chat (where (apply assoc {} arg)))))
+(defmacro find [& arg]
+  `(first (select chat 
+                  (with chat-item)
+                  (where (assoc {} ~@arg)))))
 
-(defn find-item [& arg]
-  (first (select chat-item (where (apply assoc {} arg)))))
-
-(defn find-active []
-  (first (select chat (where {:finished-at nil}))))
+(defmacro find-item [& arg]
+  ` (first (select chat-item
+                   (where (assoc {} ~@arg)))))
 
 (defn not-responded-items [chat]
   (filter (comp not :response) (:chat-item chat))) 
 
-(defn responded-items [chat]
-  (filter :response (:chat-item chat))) 
-
 (defn response-not-forwarded-items [chat]
   (filter (comp not :responded-at) (:chat-item chat))) 
 
-(def chats* 
-  (-> (select* chat)
-      (with chat-item)
-      (order :name :ASC)))
-
 (defn all []
-  (-> chats*
-      (select)))
+  (select chat
+          (with chat-item)
+          (order :name :ASC)))
 
 (defn delete! [id]
   (delete chat (where {:id id})))
@@ -61,6 +54,21 @@
   (update chat 
           (where {:id id})
           (set-fields {:finished-at (now)})))
+
+(defn item-responded! [item]
+  (update chat-item 
+          (where {:id (:id item)})
+          (set-fields {:responded-at (now)})))
+
+(defn item-response! [id rsp]
+  (update chat-item 
+          (where {:id id})
+          (set-fields {:response rsp})))
+
+(defn item-obsolete! [item]
+  (update chat-item 
+          (where {:id (:id item)})
+          (set-fields {:response (str (:response item) "<OBSOLETE>") :responded-at (now)})))
 
 (defn toggle-active! [id]
   (when-let [chat (find id)]

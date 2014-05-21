@@ -24,6 +24,7 @@
                (timestamps)))
       (create
         (index :chat-item [:chat_id])))
+
   (down []
         (drop (table :chat))
         (drop (table :chat-item))))

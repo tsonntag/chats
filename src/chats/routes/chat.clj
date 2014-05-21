@@ -1,6 +1,8 @@
 (ns chats.routes.chat
-  (refer-clojure :exclude [list new])
+  (:refer-clojure :exclude [list])
   (:require
+    [clojure.string :as str]
+    [compojure.core :refer :all]
     [chats.views.layout :as layout]
     [chats.models.chat :as chat]
     [chats.views.utils :refer :all]
@@ -55,9 +57,9 @@
              :response
              ["Response forwarded" :responded-at]))
     {:status 404
-     :body (format "chat=%s\nmsg=Not found\n" id)}))
+     :body (format "chat=%s\nmsg=not found\n" id)}))
 
-(defn new []
+(defn new-chat []
    (layout/common
      [:h1 "Create Chat"]
      [:br]
@@ -85,20 +87,22 @@
 
 ;;;;;;;;;;;;;;;;;;;;; api ;;;;;;;;;;;;;;;;;;;;;;
 
-(defn render [& {:keys [status] :or {status 200} :as arg}]
-  (let [hash (dissoc arg :status)
-        body (str/join "\n" (for [[k v] hash] (format "%s=%s" (name k) v)))]
+(defn- render [& {:keys [status item] :or {status 200 item {}} :as arg}]
+  (let [hash  (assoc (dissoc arg :status :item)
+                     :item (:id item)
+                     :req  (:request item)
+                     :rsp  (:response item))
+        body  (str/join "" (for [[k v] (filter second hash)] (format "%s=%s\n" (name k) v)))]
     {:status status :body body}))
 
-(defmacro with-chat [chat name & body]
-  `(if-let [~chat (chat/find :name ~name)]
+(defmacro with-chat [chat name active & body]
+  `(if-let [~chat (if ~active 
+                    (chat/find :name ~name :finished-at nil)
+                    (chat/find :name ~name))]
      (do ~@body)
-     (render :status 404 :chat ~name :msg "Not found")))
-
-(defmacro with-active-chat [chat & body]
-  `(if-let [~chat (chat/find-active)]
-     (do ~@body)
-     (render :status 404 :msg "Not found")))
+     (render :status 404
+             :chat ~name
+             :msg "not found")))
 
 (defn list []
   (let [lines (map #(format "%-10s: %4d\n" (:name %) (chat/item-count %)) (chat/all))
@@ -107,7 +111,7 @@
     {:status 200 :body  body}))
 
 (defn query [name]
-  (with-chat chat name
+  (with-chat chat name false
      (let [fmt    "%s;%s;%s;%s;%s\n"
            head   ["#item" "created" "request" "response" "response_forwarded"] 
            rows   (sort-by :created-at (map #((juxt :id :created-at :request :response :responded-at) %) (:chat-item chat)))
@@ -117,10 +121,11 @@
        {:status 200 :body body})))
 
 (defn delete [name]
-  (with-chat chat name
+  (with-chat chat name false
     (chat/delete! (:id chat))
-    (render :chat name)
-    (info "deleted " name)))
+    (info "deleted " name))
+    (render :chat name
+            :msg "deleted"))
 
 (defn- -create [name force]
   (if-let [chat (chat/find :name name)]
@@ -128,14 +133,16 @@
       (do
         (chat/clear!)
         (info "cleared " name)
-        (render :msg "created")
+        (render :chat name
+                :msg "created"))
       (render :status 400
               :chat name
               :msg "already exists"))
     (if-let [chat (chat/create! name)]
       (do 
-        (info "created " name))
-        (render :msg "created")
+        (info "created " name)
+        (render :chat name
+                :msg "created"))
       (render :status 400
               :chat name
               :msg "create failed"))))
@@ -143,108 +150,109 @@
 (defn create [name]
   (-create name false))
 
-(defn init [id])
+(defn init [id]
   (-create name true))
 
-(defn- forward-response [item]
+(defn- forward-response [name item]
   (chat/item-responded! item)
-  (render :item item))
+  (render :chat name
+          :item item))
 
-(defn- poll
-  ([tries msecs f]
-   (when (> tries 0)
-     (if-let [result (f)]
-       result
-       (do 
-         (Thread/sleep msecs)
-         (recur (dec tries msecs) f)))))
-  ([secs f]
-   (let [dsec  0.2
-         tries (int (/ secs 0.2))]
-     (poll tries (* 1000 dsec)))))
+(defn- poll [tries msecs f]
+  (when (> tries 0)
+    (if-let [result (f)]
+      (do
+        (info "poll: returning " result)
+        result)
+      (do 
+        (Thread/sleep msecs)
+        (recur (dec tries) msecs f)))))
 
-(defn- poll-rsp [item]
-  (info "polling reponse for " (:id item) " " (:request item))
-  (if-let [item (poll 10 #(chat/find-item :id (:id item)))]
-    (forward-response item)
+(defn- poll-rsp [name item]
+  (info "polling response for chat " name " item " (:id item) " " (:request item))
+  (if-let [item (poll 50 200 #(chat/find-item :id (:id item) :response [not= nil]))]
+    (forward-response name item)
     (render :status 404
+            :chat name
             :item item
             :msg "Timeout")))
 
-(defn get-req []
-  (with-active-chat chat
-    (info "get-req: polling for request for" (:name chat))
-    (if-let [item (poll 5.0 #(first (chat/not-responded-items chat)))]
-      (render :item item)
+(defn get-req [name]
+  (with-chat chat name true
+    (info "get-req: polling for request for" name)
+    (if-let [item (poll 25 200 #(first (chat/not-responded-items chat)))]
+      (render :chat name
+              :item item)
       (render :status 404 
+              :chat name
               :msg "Timeout"))))
 
-(defn get-rsp []
-  (with-active-chat chat
-    (info "get-rsp chat: " (:name chat))
-    (if-let [item (chat/response-not-forwarded-items chat)]
-      (forward-response item)
+(defn get-rsp [name]
+  (with-chat chat name true
+    (info "get-rsp chat: " name)
+    (if-let [item (first (filter :response (chat/response-not-forwarded-items chat)))]
+      (forward-response name item)
       (if-let [item (first (chat/not-responded-items chat))]
-        (poll-rsp item)
+        (poll-rsp name item)
         (render :status 404
-                :msg "No open req")))))
+                :chat name
+                :msg "no open req")))))
 
-(defn post-req [req])
-  (with-active-chat chat
+(defn post-req [name req]
+  (with-chat chat name true
     (doseq [item (chat/not-responded-items chat)]
       (do
         (info "post-req " req " for chat " (:name chat) ". marking obsolet not responded request " (:request item))
-        (chat/obsolet-item! (:id item))))
+        (chat/item-obsolete! item)))
 
     (doseq [item (chat/response-not-forwarded-items chat)]
       (do
         (info "post-req " req " for chat " (:name chat) ". marking obsolet not forwarded response for request " (:request item))
-        (chat/obsolet-item! (:id item))))
+        (chat/item-obsolete! item)))
 
-    (let [item (chat/create-item! (:id chat) :request req)]
+    (let [item (chat/add-item! {:chat_id (:id chat) :request req})]
       (info "post-req: created request " req ". waiting for response...")
-      (poll-rsp item))))
+      (poll-rsp name item))))
 
-(defn post-rsp [rsp item-id]
-  (with-active-chat chat
-    (if-let [item (chat/find-item item-id)]
+(defn post-rsp [name rsp item-id]
+  (with-chat chat name true
+    (if-let [item (chat/find-item :id item-id)]
       (if (:response item)
         (render :status 400
+                :chat name
                 :item item
-                :msg "Item has already a rsp")
+                :msg "item has already a rsp")
         (do
-          (chat/respond-item! item-id rsp)
-          (info "pos-rsp: " rsp " for " (:name chat) " accepted")
-          (render :item item
-                  :msg "Rsp accepted")))
+          (chat/item-response! item-id rsp)
+          (info "post-rsp: " rsp " for " name " accepted")
+          (render :chat name
+                  :item (assoc item :response rsp)
+                  :msg "rsp accepted")))
       (render :status 404
+              :chat name
               :item {:id item-id}
-              :msg (str "No item " item-id)))))
+              :msg (str "no item " item-id)))))
 
 
-(defroutes app-routes
+(defroutes chat-routes
     ; gui
     (GET    "/chats"            []     (all))
     (POST   "/chats"            [name] (create name))
-    (GET    "/chats/new"        []     (new))
-
-    ; api
-    (GET    "/chats/list"       []          (list))
-    (GET    "/chats/rsp"        []          (get-rsp))
-    (POST   "/chats/rsp"        [rsp item]  (post-rsp rsp item))
-    (GET    "/chats/req"        []          (get-req))
-    (POST   "/chats/req"        [req]       (post-req req))
-
-    ; gui
+    (GET    "/chats/new"        []     (new-chat))
     (GET    "/chats/:id"        [id]   (show   (Integer/parseInt id)))
     (PUT    "/chats/:id/toggle" [id]   (toggle (Integer/parseInt id)))
     (PUT    "/chats/:id/clear"  [id]   (clear  (Integer/parseInt id)))
     (DELETE "/chats/:id"        [id]   (delete (Integer/parseInt id)))
 
     ; api
-    (GET    "/chats/:name/query"  [name] (query  name))
-    (POST   "/chats/:name/delete" [name] (delete name)))
-    (POST   "/chats/:name/create" [name] (create name))
-    (POST   "/chats/:name/init"   [name] (init   name))
+    (GET    "/chats/list"         []              (list))
+    (GET    "/chats/:name/rsp"    [name]          (get-rsp  name))
+    (POST   "/chats/:name/rsp"    [name rsp item] (post-rsp name rsp (Integer/parseInt item)))
+    (GET    "/chats/:name/req"    [name]          (get-req  name))
+    (POST   "/chats/:name/req"    [name req]      (post-req name req))
+    (GET    "/chats/:name/query"  [name]          (query    name))
+    (POST   "/chats/:name/delete" [name]          (delete   name))
+    (POST   "/chats/:name/create" [name]          (create   name))
+    (POST   "/chats/:name/init"   [name]          (init     name))
   )
 
