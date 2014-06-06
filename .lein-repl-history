@@ -1,6 +1,3 @@
-(macroexpand '(links "chats" new foo))
-(use 'chats.views.utils)
-(macroexpand '(links "chats" new foo))
 (use 'chats.views.utils :reload)
 (macroexpand '(links "chats" new foo))
 (macroexpand '(links "chats" new (delete 1)))
@@ -498,3 +495,6 @@ not=
 )
 (start-server)
 (quit)
+(use 'chat.repl)
+(use 'chats.repl)
+(start-server)

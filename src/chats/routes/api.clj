@@ -139,7 +139,7 @@
 (defn post-rsp [name rsp item-id]
   (with-chat chat name true
     (info name "post-rsp")
-    (if-let [item (find-item :id item-id)]
+    (if-let [item (find-item {:id item-id})]
       (if (:response item)
         (render :status 400
                 :chat name
