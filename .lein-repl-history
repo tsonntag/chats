@@ -1,36 +1,3 @@
-(defmacro links [resource & links]
-  [:ul.inline
-     (for [link links]
-        [:li (-> resource link)])])
-(links "chats" new)
-(macroexpand-1 '(links "chats" new))
-(macroexpand '(links "chats" new))
-(macroexpand '(links "chats" new foo))
-(defmacro links [resource & links]
-  [:ul.inline
-     (for [l links]
-        [:li l])])
-(defmacro links [resource & links]
-(macroexpand '(links "chats" new foo))
-(defmacro links [resource & links]
-  [:ul.inline
-     (for [l links]
-        [:li (str "link-" l)])])
-(macroexpand '(links "chats" new foo))
-(defmacro links [resource & links]
-  [:ul.inline
-     (for [l links]
-        [:li (resolve (str "link-" l))])])
-(macroexpand '(links "chats" new foo))
-(defmacro links [resource & links]
-  [:ul.inline
-     (for [l links]
-        [:li (resolve (symbol (str "link-" l)))])])
-(macroexpand '(links "chats" new foo))
-(resolve "struct")
-(resolve (symbol "struct"))
-(use 'chats.chats.utils)
-(use 'chats.views.utils)
 (macroexpand '(links "chats" new foo))
 (use 'chats.views.utils)
 (macroexpand '(links "chats" new foo))
@@ -498,3 +465,36 @@ not=
 (start-server)
 (require '[chats.models.chat :refer :all] :reload)
 (find-item :id 20)
+(quit)
+(require '[chats.models.chat :refer :all] :reload)
+(find-chat)
+(use 'chats.handler)
+(use 'chats.handler :reload)
+(use 'chats.repl :reload)
+(start-server
+8080)
+(start-server)
+(find-chat :name "5")
+(find-item :id 22)
+(find-item :id 23)
+(find-item :id 44)
+(find-item :id 22 [not= nil])
+(find-item :id 22 :response [not= nil])
+(find-item  :response [not= nil])
+(find-item  :response [= nil])
+(find-item  :response [not= nil])
+(find-item  :response [= nil])
+(find-item  (responded))
+(require '[chats.models.chat :refer :all] :reload)
+(find-item {:id 14})
+(find-item {:id 14} (responded))
+(find-item {:id 14} (not-responded))
+(find-item {:id 22} (not-responded))
+(find-item {:id 22} (responded))
+(stop-server
+)
+(stop-server)
+(stop-server
+)
+(start-server)
+(quit)

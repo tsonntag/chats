@@ -5,16 +5,23 @@
     [chats.models.chat :refer :all]
     [taoensso.timbre :refer [info debug]]))
 
+(defn item-s [item]
+  (into {}
+        (map second
+             (select-keys item [:request :response :responded-at]))))
+
 (defn- render [& {:keys [status item] :or {status 200 item {}} :as arg}]
-  (let [hash  (assoc (dissoc arg :status :item)
+  (let [data (filter second
+                     (assoc (dissoc arg :status :item)
                      :item (:id item)
                      :req  (:request item)
-                     :rsp  (:response item))
-        body  (str/join "" (for [[k v] (filter second hash)] (format "%s=%s\n" (name k) v)))]
+                     :rsp  (:response item)))
+        body  (str/join "" (for [[k v] data] (format "%s=%s\n" (name k) v)))]
+    (info "render" (into {:status status} data))
     {:status status :body body}))
 
 (defmacro with-chat [chat name active & body]
-  `(if-let [~chat (if ~active 
+  `(if-let [~chat (if ~active
                     (find-chat :name ~name :finished-at nil)
                     (find-chat :name ~name))]
      (do ~@body)
@@ -31,7 +38,7 @@
 (defn query [name]
   (with-chat chat name false
      (let [fmt    "%s;%s;%s;%s;%s\n"
-           head   ["#item" "created" "request" "response" "response_forwarded"] 
+           head   ["#item" "created" "request" "response" "response_forwarded"]
            rows   (sort-by :created-at (map #((juxt :id :created-at :request :response :responded-at) %) (:chat-item chat)))
            lines  (map #(apply format fmt %) (cons head rows))
            title  (format "chat: %s\n" name)
@@ -41,26 +48,22 @@
 (defn delete [name]
   (with-chat chat name false
     (chat-delete! (:id chat))
-    (info "deleted " name))
     (render :chat name
-            :msg "deleted"))
+            :msg "deleted")))
 
 (defn- -create [name force]
   (if-let [chat (find-chat :name name)]
     (if force
       (do
         (chat-clear! (:id chat))
-        (info "cleared " name)
         (render :chat name
                 :msg "created"))
       (render :status 400
               :chat name
               :msg "already exists"))
     (if-let [chat (chat-create! name)]
-      (do 
-        (info "created " name)
-        (render :chat name
-                :msg "created"))
+      (render :chat name
+              :msg "created")
       (render :status 400
               :chat name
               :msg "create failed"))))
@@ -80,15 +83,15 @@
   (when (> tries 0)
     (if-let [result (f)]
       (do
-        (info "poll: returning " result)
+        (debug "poll: returning" result)
         result)
-      (do 
+      (do
         (Thread/sleep msecs)
         (recur (dec tries) msecs f)))))
 
 (defn- poll-rsp [name item]
-  (info "polling response for chat " name " item " (:id item) " " (:request item))
-  (if-let [item (poll 50 200 #(first (items (:id item) (responded))))]
+  (info name "poll-rsp" item)
+  (if-let [item (poll 50 200 #(find-item item (responded)))]
     (forward-response name item)
     (render :status 404
             :chat name
@@ -97,20 +100,20 @@
 
 (defn get-req [name]
   (with-chat chat name true
-    (info "get-req: polling for request for" name)
-    (if-let [item (poll 25 200 #(first (items (:id chat) (not-responded))))]
+    (info "get-req:" name "polling for request..")
+    (if-let [item (poll 25 200 #(first (items (for-chat chat) (not-responded))))]
       (render :chat name
               :item item)
-      (render :status 404 
+      (render :status 404
               :chat name
               :msg "Timeout"))))
 
 (defn get-rsp [name]
   (with-chat chat name true
-    (info "get-rsp chat: " name)
-    (if-let [item (first (items (:id chat) (responded) (response-not-forwarded)))]
+    (info name "get-rsp")
+    (if-let [item (first (items (for-chat chat) (responded) (response-not-forwarded)))]
       (forward-response name item)
-      (if-let [item (first (items (:id chat) (not-responded)))]
+      (if-let [item (first (items (for-chat chat) (not-responded)))]
         (poll-rsp name item)
         (render :status 404
                 :chat name
@@ -118,22 +121,24 @@
 
 (defn post-req [name req]
   (with-chat chat name true
-    (doseq [item (items (:id chat) (not-responded))]
+    (info name "post-req")
+    (doseq [item (items (for-chat chat) (not-responded))]
       (do
-        (info "post-req " req " for chat " name ". marking obsolet not responded request " (:request item))
+        (info name "post-req" req ". marking obsolete not responded request" item)
         (item-obsolete! item)))
 
-    (doseq [item (items (:id chat) (response-not-forwarded))]
+    (doseq [item (items (for-chat chat) (response-not-forwarded))]
       (do
-        (info "post-req " req " for chat " name ". marking obsolet not forwarded response for request " (:request item))
+        (info name "post-req" req ". marking obsolete not forwarded response for request" item)
         (item-obsolete! item)))
 
     (let [item (add-item! {:chat_id (:id chat) :request req})]
-      (info "post-req: created request " req ". waiting for response...")
+      (info name "post-req. created request" req ". waiting for response...")
       (poll-rsp name item))))
 
 (defn post-rsp [name rsp item-id]
   (with-chat chat name true
+    (info name "post-rsp")
     (if-let [item (find-item :id item-id)]
       (if (:response item)
         (render :status 400
@@ -142,7 +147,6 @@
                 :msg "item has already a rsp")
         (do
           (item-response! item-id rsp)
-          (info "post-rsp: " rsp " for " name " accepted")
           (render :chat name
                   :item (assoc item :response rsp)
                   :msg "rsp accepted")))

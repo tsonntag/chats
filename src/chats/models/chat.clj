@@ -19,18 +19,20 @@
   (insert chat-item (values [item])))
 
 (defmacro find-chat [& arg]
-  `(first (select chat 
+  `(first (select chat
                   (with chat-item)
                   (where (assoc {} ~@arg)))))
 
-(defmacro find-item [& arg]
-  `(first (select chat-item
-                  (where (assoc {} ~@arg)))))
+(defmacro items [& forms]
+  `(select chat-item ~@forms))
 
-(defmacro items [chat-id & forms]
-  `(select chat-item
-           (where {:chat_id ~chat-id})
-           ~@forms))
+(defn for-chat [query chat]
+  (where query {:chat_id (:id chat)}))
+
+(defmacro find-item [item & forms]
+  `(first
+    (items (where (select-keys ~item [:id]))
+           ~@forms)))
 
 (defn not-responded [query]
   (where query {:response nil}))
@@ -53,27 +55,27 @@
   (not (:finished-at chat)))
 
 (defn chat-active! [id]
-  (update chat 
+  (update chat
           (where {:id id})
           (set-fields {:finished-at nil})))
 
 (defn chat-pause! [id]
-  (update chat 
+  (update chat
           (where {:id id})
           (set-fields {:finished-at (now)})))
 
 (defn item-responded! [item]
-  (update chat-item 
+  (update chat-item
           (where {:id (:id item)})
           (set-fields {:responded-at (now)})))
 
 (defn item-response! [id rsp]
-  (update chat-item 
+  (update chat-item
           (where {:id id})
           (set-fields {:response rsp})))
 
 (defn item-obsolete! [item]
-  (update chat-item 
+  (update chat-item
           (where {:id (:id item)})
           (set-fields {:response (str (:response item) "<OBSOLETE>") :responded-at (now)})))
 
