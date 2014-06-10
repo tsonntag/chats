@@ -77,7 +77,7 @@
 (defn item-obsolete! [item]
   (update chat-item
           (where {:id (:id item)})
-          (set-fields {:response (str (:response item) "<OBSOLETE>") :responded-at (now)})))
+          (set-fields {:response (str (:response item) "(OBSOLETE)") :responded-at (now)})))
 
 (defn chat-toggle-active! [id]
   (when-let [chat (find-chat id)]

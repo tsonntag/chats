@@ -1,6 +1,3 @@
-(macroexpand-1 (-> "chats" new))
-(macroexpand-1 '(-> "chats" new))
-(macroexpand '(links "chats" new ))
 (macroexpand-1 '(links "chats" new ))
 (use 'chats.views.utils :reload)
 (macroexpand '(links "chats" new ))
@@ -498,3 +495,6 @@ not=
 (c/items (c/for-chat {:id 12}) (c/not-responded))
 (c/poll 25 200 #(first  (c/items (c/for-chat {:id 12}) (c/not-responded))))
 (#'chats.routes.api/poll 25 200 #(first  (c/items (c/for-chat {:id 12}) (c/not-responded))))
+(require '[chats.routes.api :as api] :reload)
+(c/item-responded! {:id 22})
+quit

@@ -15,20 +15,20 @@
 (defn prop-key [arg]
    (cond
      (keyword? arg) (capitalize (name arg))
-     (vector? arg)  (escape-html (first arg))
-     :else (escape-html arg)))
+     (vector? arg)  (first arg)
+     :else arg))
 
 (defn table* [heads rows]
   [:table.table.table-striped
    [:thead
     [:tr
      (for [head heads]
-       [:th (escape-html head)])]]
+       [:th head])]]
    [:tbody
     (for [row rows]
       [:tr
        (for [el row]
-         [:td (escape-html el)])])]])
+         [:td el])])]])
 
 (defn table [objs & cols]
   ;(debug "table" objs)
