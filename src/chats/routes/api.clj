@@ -10,14 +10,14 @@
         (map second
              (select-keys item [:request :response :responded-at]))))
 
-(defn- render [& {:keys [status item] :or {status 200 item {}} :as arg}]
+(defn- render [title & {:keys [status item] :or {status 200 item {}} :as arg}]
   (let [data (filter second
                      (assoc (dissoc arg :status :item)
                      :item (:id item)
                      :req  (:request item)
                      :rsp  (:response item)))
         body  (str/join "" (for [[k v] data] (format "%s=%s\n" (name k) v)))]
-    (info "render" (into {:status status} data))
+    (info title "render" (into {:status status} data))
     {:status status :body body}))
 
 (defmacro with-chat [chat name active & body]
@@ -25,7 +25,7 @@
                     (find-chat :name ~name :finished-at nil)
                     (find-chat :name ~name))]
      (do ~@body)
-     (render :status 404
+     (render "with-chat" :status 404
              :chat ~name
              :msg "not found")))
 
@@ -48,25 +48,31 @@
 (defn delete [name]
   (with-chat chat name false
     (chat-delete! (:id chat))
-    (render :chat name
+    (render "delete:"
+            :chat name
             :msg "deleted")))
 
 (defn- -create [name force]
   (if-let [chat (find-chat :name name)]
-    (if force
-      (do
-        (chat-clear! (:id chat))
-        (render :chat name
-                :msg "created"))
-      (render :status 400
-              :chat name
-              :msg "already exists"))
-    (if-let [chat (chat-create! name)]
-      (render :chat name
-              :msg "created")
-      (render :status 400
-              :chat name
-              :msg "create failed"))))
+    (let [title "create:"]
+      (if force
+        (do
+          (chat-clear! (:id chat))
+          (render title
+                  :chat name
+                  :msg "created"))
+        (render title
+                :status 400
+                :chat name
+                :msg "already exists"))
+      (if-let [chat (chat-create! name)]
+        (render title
+                :chat name
+                :msg "created")
+        (render title
+                :status 400
+                :chat name
+                :msg "create failed")))))
 
 (defn create [name]
   (-create name false))
@@ -74,9 +80,10 @@
 (defn init [name]
   (-create name true))
 
-(defn- forward-response [name item-id]
+(defn- forward-response [name item-id title]
   (let [item (item-responded! item-id)]
-    (render :chat name
+    (render title
+            :chat name
             :item item)))
 
 (defn- poll [tries msecs f]
@@ -89,71 +96,82 @@
         (Thread/sleep msecs)
         (recur (dec tries) msecs f)))))
 
-(defn- poll-rsp [name item]
-  (info name "poll-rsp" item)
+(defn- poll-rsp [name item title]
+  (info title name item "poll-rsp...")
   (if-let [item (poll 50 200 #(find-item item (responded)))]
-    (forward-response name (:id item))
-    (render :status 404
+    (forward-response name (:id item) title)
+    (render title
+            :status 404
             :chat name
             :item item
             :msg "Timeout")))
 
 (defn get-req [name]
-  (with-chat chat name true
-    (info "get-req:" name "polling for request..")
-    (if-let [item (poll 25 200 #(first (items (for-chat chat) (not-responded))))]
-      (render :chat name
-              :item item)
-      (render :status 404
-              :chat name
-              :msg "Timeout"))))
+  (let [title "get-req:"]
+    (with-chat chat name true
+      (info title name "polling for request..")
+      (if-let [item (poll 25 200 #(first (items (for-chat chat) (not-responded))))]
+        (render title
+                :chat name
+                :item item)
+        (render title
+                :status 404
+                :chat name
+                :msg "Timeout")))))
 
 (defn get-rsp [name]
-  (with-chat chat name true
-    (info name "get-rsp")
-    (if-let [item (first (items (for-chat chat) (responded) (response-not-forwarded)))]
-      (forward-response name (:id item))
-      (if-let [item (first (items (for-chat chat) (not-responded)))]
-        (poll-rsp name item)
-        (render :status 404
-                :chat name
-                :msg "no open req")))))
+  (let [title "post-req:"]
+    (with-chat chat name true
+      (info title name)
+      (if-let [item (first (items (for-chat chat) (responded) (response-not-forwarded)))]
+        (forward-response name (:id item) title)
+        (if-let [item (first (items (for-chat chat) (not-responded)))]
+          (poll-rsp name item title)
+          (render title
+                  :status 404
+                  :chat name
+                  :msg "no open req"))))))
 
 (defn post-req [name req]
-  (with-chat chat name true
-    (info name "post-req")
-    (doseq [item (items (for-chat chat) (not-responded))]
-      (do
-        (info name "post-req" req ". marking obsolete not responded request" item)
-        (item-obsolete! item)))
+  (let [title "post-req:"]
+    (with-chat chat name true
+      (info title name)
+      (doseq [item (items (for-chat chat) (not-responded))]
+        (do
+          (info title name req ". marking obsolete not responded request" item)
+          (item-obsolete! item)))
 
-    (doseq [item (items (for-chat chat) (response-not-forwarded))]
-      (do
-        (info name "post-req" req ". marking obsolete not forwarded response for request" item)
-        (item-obsolete! item)))
+      (doseq [item (items (for-chat chat) (response-not-forwarded))]
+        (do
+          (info title name req ". marking obsolete not forwarded response for request" item)
+          (item-obsolete! item)))
 
-    (let [item (add-item! {:chat_id (:id chat) :request req})]
-      (info name "post-req. created request" req ". waiting for response...")
-      (poll-rsp name item))))
+      (let [item (add-item! {:chat_id (:id chat) :request req})]
+        (info title name "created request" req ". waiting for response...")
+        (poll-rsp name item title)))))
 
 (defn post-rsp [name rsp item-id]
-  (with-chat chat name true
-    (info name "post-rsp")
-    (if-let [item (find-item {:id item-id})]
-      (if (:response item)
-        (render :status 400
+  (let [title "post-req:"]
+    (with-chat chat name true
+      (info title name)
+      (if-let [item (find-item {:id item-id})]
+        (if (:response item)
+          (render title
+                  :status 400
+                  :chat name
+                  :item item
+                  :msg "item has already a rsp")
+          (do
+            (item-response! item-id rsp)
+            (render title
+                    :chat name
+                    :item (assoc item :response rsp)
+                    :msg "rsp accepted")))
+        (render title
+                :status 404
                 :chat name
-                :item item
-                :msg "item has already a rsp")
-        (do
-          (item-response! item-id rsp)
-          (render :chat name
-                  :item (assoc item :response rsp)
-                  :msg "rsp accepted")))
-      (render :status 404
-              :chat name
-              :item {:id item-id}
-              :msg (str "no item " item-id)))))
+                :item {:id item-id}
+                :msg (str "no item " item-id))))))
 
 
 (defroutes api-routes
