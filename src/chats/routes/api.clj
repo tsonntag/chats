@@ -74,10 +74,10 @@
 (defn init [name]
   (-create name true))
 
-(defn- forward-response [name item]
-  (item-responded! item)
-  (render :chat name
-          :item item))
+(defn- forward-response [name item-id]
+  (let [item (item-responded! item-id)]
+    (render :chat name
+            :item item)))
 
 (defn- poll [tries msecs f]
   (when (> tries 0)
@@ -92,7 +92,7 @@
 (defn- poll-rsp [name item]
   (info name "poll-rsp" item)
   (if-let [item (poll 50 200 #(find-item item (responded)))]
-    (forward-response name item)
+    (forward-response name (:id item))
     (render :status 404
             :chat name
             :item item
@@ -112,7 +112,7 @@
   (with-chat chat name true
     (info name "get-rsp")
     (if-let [item (first (items (for-chat chat) (responded) (response-not-forwarded)))]
-      (forward-response name item)
+      (forward-response name (:id item))
       (if-let [item (first (items (for-chat chat) (not-responded)))]
         (poll-rsp name item)
         (render :status 404

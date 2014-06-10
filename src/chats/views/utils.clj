@@ -1,8 +1,10 @@
 (ns chats.views.utils
-  (:require 
-    [clojure.string :refer [capitalize]]
-    [hiccup.element :refer :all]
-    [hiccup.form :refer :all]))
+  (:require
+    [clojure.string  :refer [capitalize]]
+    [hiccup.element  :refer :all]
+    [hiccup.form     :refer :all]
+    [hiccup.util     :refer [escape-html]]
+    [taoensso.timbre :refer [info debug]]))
 
 (defn prop-val [obj arg]
   (cond
@@ -13,28 +15,29 @@
 (defn prop-key [arg]
    (cond
      (keyword? arg) (capitalize (name arg))
-     (vector? arg)  (first arg)
-     :else arg))
+     (vector? arg)  (escape-html (first arg))
+     :else (escape-html arg)))
 
 (defn table* [heads rows]
   [:table.table.table-striped
    [:thead
     [:tr
      (for [head heads]
-       [:th head])]]
+       [:th (escape-html head)])]]
    [:tbody
     (for [row rows]
       [:tr
-       (for [el row] 
-         [:td el])])]])
+       (for [el row]
+         [:td (escape-html el)])])]])
 
 (defn table [objs & cols]
+  ;(debug "table" objs)
   (let [heads (map prop-key cols)
-        rows  (map (fn [obj] 
+        rows  (map (fn [obj]
                      (map #(prop-val obj %) cols))
                    objs)]
     (table* heads rows)))
-    
+
 
 (defn prop-table [obj & args]
   (for [arg args]
@@ -73,7 +76,7 @@
             ~@args))
 
 (defmacro links [resource & links]
-  `(list 
+  `(list
     [:br]
     [:ul.list-inline
      ~@(for [link links]

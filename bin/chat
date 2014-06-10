@@ -10,7 +10,7 @@ else
   data="$cmd=$3"
 fi
 
-#host="kaffeeklatsch.herokuapp.com"
+host="kaffeeklatsch.herokuapp.com"
 host="localhost:8080"
 if [[ "$cmd" ]]; then
   path="$chat/$cmd"

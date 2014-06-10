@@ -64,9 +64,9 @@
           (where {:id id})
           (set-fields {:finished-at (now)})))
 
-(defn item-responded! [item]
+(defn item-responded! [id]
   (update chat-item
-          (where {:id (:id item)})
+          (where {:id id})
           (set-fields {:responded-at (now)})))
 
 (defn item-response! [id rsp]

@@ -47,7 +47,7 @@
                   :created-at
                   ["Active" (chat-active? chat)])
       [:br]
-      (table (:chat-item chat)
+      (table (sort-by :created-at (:chat-item chat))
              :id
              :created-at
              :request
