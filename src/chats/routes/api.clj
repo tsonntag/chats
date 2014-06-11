@@ -55,8 +55,8 @@
             :msg "deleted")))
 
 (defn- -create [name force]
-  (if-let [chat (find-chat :name name)]
-    (let [title "create:"]
+  (let [title "create:"]
+    (if-let [chat (find-chat :name name)]
       (if force
         (do
           (chat-clear! (:id chat))
