@@ -11,7 +11,8 @@
     [compojure.route :as route]
     [chats.routes.gui :refer [gui-routes]]
     [chats.routes.api :refer [api-routes]]
-    [taoensso.timbre :as timbre]
+    [taoensso.timbre :refer [info debug set-config!]]
+    [clojure.pprint :refer [pprint]]
     [com.postspectacular.rotor :as rotor])
   (:gen-class))
 
@@ -19,7 +20,7 @@
     (println "level:" level "message:" message))
 
 (defn init []
-    (timbre/set-config!
+    (set-config!
           [:appenders :rotor]
           {:min-level :info
                 :enabled? true
@@ -27,25 +28,33 @@
                 :max-message-per-msecs nil
                 :fn rotor/append})
 
-    (timbre/set-config!
+    (set-config!
           [:shared-appender-config :rotor]
           {:path "chats.log" :max-size (* 512 1024) :backlog 10})
 
-    (timbre/info "chats started successfully"))
+    (info "chats started successfully"))
 
 (defn migrate []
-    (println "migrate")
-    (println "open-global ...")
+    (info "migrate")
+    (info "open-global ...")
     (try (open-global schema/db-spec)
       (catch Exception e (str "caught exception: " (.getMessage e))))
-    (println "migrate ...")
+    (info "migrate ...")
     (lobos.core/migrate)
-    (println "pending migrations:" (with-out-str (lobos.core/print-pending)))
-    (println "done migrations:"    (with-out-str (lobos.core/print-done)))
+    ;(info "pending migrations:" (with-out-str (lobos.core/print-pending)))
+    ;(info "done migrations:"    (with-out-str (lobos.core/print-done)))
   )
 
 (defn destroy []
-    (timbre/info "chats is shutting down"))
+    (info "chats is shutting down"))
+
+(defn with-header [handler header value]
+  (fn [request]
+    (let [response (handler request)]
+      (assoc-in response [:headers header] value))))
+
+(defn wrap-no-cache [handler]
+  (with-header handler "Cache-Control" "max-age=0, must-revalidate"))
 
 (defroutes home-routes
   (GET "/" [] (layout/common [:h1 "Welcome to chats!"])))
@@ -55,12 +64,13 @@
   (route/not-found "Not Found"))
 
 (def app
-  (-> (routes 
-        home-routes
-        api-routes
-        gui-routes
-        app-routes)
-      (handler/site)))
+  (wrap-no-cache
+    (-> (routes
+         home-routes
+         api-routes
+         gui-routes
+         app-routes)
+        (handler/site))))
 
 (defn -main [port]
   (migrate)

@@ -3,12 +3,14 @@
     [clojure.string :as str]
     [compojure.core :refer :all]
     [chats.models.chat :refer :all]
+    [ring.util.response :refer [response]]
     [taoensso.timbre :refer [info debug]]))
 
 (defn item-s [item]
   (into {}
         (map second
              (select-keys item [:request :response :responded-at]))))
+
 
 (defn- render [title & {:keys [status item] :or {status 200 item {}} :as arg}]
   (let [data (filter second
@@ -33,7 +35,7 @@
   (let [lines (map #(format "%-10s: %4d\n" (:name %) (item-count %)) (chats))
         head  "#chat items\n"
         body  (apply str (cons head lines))]
-    {:status 200 :body  body}))
+    (response body)))
 
 (defn query [name]
   (with-chat chat name false
@@ -43,7 +45,7 @@
            lines  (map #(apply format fmt %) (cons head rows))
            title  (format "chat: %s\n" name)
            body   (apply str (cons title lines))]
-       {:status 200 :body body})))
+    (response body))))
 
 (defn delete [name]
   (with-chat chat name false
@@ -151,7 +153,7 @@
         (poll-rsp name item title)))))
 
 (defn post-rsp [name rsp item-id]
-  (let [title "post-req:"]
+  (let [title "post-rsp:"]
     (with-chat chat name true
       (info title name)
       (if-let [item (find-item {:id item-id})]

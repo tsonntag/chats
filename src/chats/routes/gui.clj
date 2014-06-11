@@ -4,10 +4,12 @@
     [chats.views.layout :as layout]
     [chats.models.chat :refer :all]
     [chats.views.utils :refer :all]
+    [ring.util.response :refer [not-found]]
     [noir.response :refer [redirect]]
     [taoensso.timbre :refer [info debug]]
     [hiccup.element :refer :all]
-    [hiccup.form :refer :all]))
+    [hiccup.form :refer :all]
+    [clojure.string :as str :refer [join]]))
 
 (defn- link [chat]
   (link-to (format "/chats/%s" (:id chat)) (:name chat)))
@@ -39,22 +41,24 @@
 
 (defn show [id]
   (if-let [chat (find-chat :id id)]
-    (layout/common
-      [:h1 "Chat"]
-      (links "chats" link-list (link-delete id) (link-clear id) (link-toggle chat))
-      (prop-table chat
-                  :name
-                  :created-at
-                  ["Active" (chat-active? chat)])
-      [:br]
-      (table (sort-by :created-at (:chat-item chat))
-             :id
-             :created-at
-             :request
-             :response
-             ["Response forwarded" :responded-at]))
-    {:status 404
-     :body (format "chat=%s\nmsg=not found\n" id)}))
+    (let [fmt #(str/join " " (re-seq #"..{0,15}" (or % "")))]
+      (layout/common
+        [:h1 "Chat"]
+        (links "chats" link-list (link-delete id) (link-clear id) (link-toggle chat))
+        (prop-table chat
+                    :name
+                    :created-at
+                    ["Active" (chat-active? chat)])
+        [:br]
+        (table (sort-by :created-at (:chat-item chat))
+               :id
+               :created-at
+               ["Request"  (comp fmt :request)]
+               ["Response" (comp fmt :response)]
+               ["Response forwarded" :responded-at])))
+    (not-found (layout/common
+      (links "chats" link-list)
+      [:h4 "Chat " 1 " not found"]))))
 
 (defn new-chat []
    (layout/common
@@ -78,6 +82,7 @@
   (redirect-to id))
 
 (defn clear [id]
+  (info "clear" id)
   (chat-clear! id)
   (redirect-to id))
 
